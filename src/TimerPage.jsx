@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react"; // ⬅️ IMPORT useRef
 import "./TimerPage.css";
 import { useSettings } from "./hooks/useSettings.jsx";
 import { useStats } from "./hooks/useStats.jsx";
@@ -10,11 +10,20 @@ export default function TimerPage() {
   const { settings } = useSettings();
   const { addSession } = useStats();
   
-  // State for current mode (pomodoro/break), running status, and seconds left
+  // State for current mode (pomodoro/break) and seconds left
   const [mode, setMode] = useState("pomodoro"); 
-  const [running, setRunning] = useState(false);
-  // Initialize seconds based on settings on component load
   const [seconds, setSeconds] = useState(settings.pomodoroTime * 60);
+  // ⬅️ NEW: Use a state variable only for UI/Button text
+  const [isTimerRunning, setIsTimerRunning] = useState(false); 
+  
+  // ⬅️ CRITICAL FIX: Use a ref to reliably track the running status in the interval
+  const runningRef = useRef(isTimerRunning); 
+
+  // Function to update the ref whenever the state changes
+  useEffect(() => {
+    runningRef.current = isTimerRunning;
+  }, [isTimerRunning]);
+
 
   // --- Utility Functions ---
 
@@ -24,33 +33,36 @@ export default function TimerPage() {
 
   // Function to reset and set mode based on settings
   const startPomodoro = useCallback(() => {
-    setRunning(false);
+    setIsTimerRunning(false); // Update the state and the ref via useEffect
     setMode("pomodoro");
-    // Only reset seconds here
     setSeconds(settings.pomodoroTime * 60);
   }, [settings.pomodoroTime]);
 
   const startBreak = useCallback(() => {
-    setRunning(false);
+    setIsTimerRunning(false); // Update the state and the ref via useEffect
     setMode("break");
-    // Only reset seconds here
     setSeconds(settings.breakTime * 60);
   }, [settings.breakTime]);
 
-  // --- Core Timer Logic ---
+
+  // --- Core Timer Logic (Now uses the Ref) ---
   useEffect(() => {
     let interval = null;
 
-    if (running && seconds > 0) {
+    // ⬅️ Check Ref on mount/unmount to immediately set/clear interval
+    if (isTimerRunning && seconds > 0) {
       // Countdown logic
       interval = setInterval(() => {
-        setSeconds((s) => s - 1);
+        // ⬅️ Check Ref inside interval for PAUSE/RESUME stability
+        if (runningRef.current && seconds > 0) {
+          setSeconds((s) => s - 1);
+        }
       }, 1000);
 
-    } else if (seconds === 0 && running) {
+    } else if (seconds === 0 && isTimerRunning) {
       // Timer has finished
       clearInterval(interval);
-      setRunning(false);
+      setIsTimerRunning(false); // Update the state and the ref
 
       // Play the alarm sound
       ALARM_SOUND.play();
@@ -76,26 +88,23 @@ export default function TimerPage() {
 
     return () => clearInterval(interval);
     
-  }, [running, seconds, mode, settings.pomodoroTime, settings.breakTime, addSession, startBreak, startPomodoro]);
+  }, [isTimerRunning, seconds, mode, settings.pomodoroTime, settings.breakTime, addSession, startBreak, startPomodoro]);
+
 
   // --- SAFE SETTINGS & MODE CHANGE EFFECT ---
-  // This hook ensures that if the mode is changed (by clicking Pomodoro/Break buttons)
-  // OR if the settings are changed (by the user on the settings page), the time is updated.
-  // CRITICALLY, it checks that the timer is NOT running.
+  // This hook updates the time if settings change OR mode is switched, ONLY when the timer is stopped.
   useEffect(() => {
-    if (!running) {
+    if (!isTimerRunning) {
       const newTime = mode === "pomodoro" 
         ? settings.pomodoroTime * 60 
         : settings.breakTime * 60;
         
-      // Only update if the time displayed doesn't match the new required time.
       if (seconds !== newTime) {
         setSeconds(newTime);
       }
     }
-    // We explicitly exclude 'seconds' from dependencies to prevent infinite loop
-    // when setting seconds inside this hook.
-  }, [mode, settings.pomodoroTime, settings.breakTime, running]); 
+  }, [mode, settings.pomodoroTime, settings.breakTime, isTimerRunning]); 
+
 
   // --- Render Component ---
 
@@ -107,17 +116,15 @@ export default function TimerPage() {
       <div className="mode-buttons">
         <button
           className={mode === "pomodoro" ? "active" : ""}
-          // Change: Only allow mode switch if not running
-          onClick={() => { if (!running) setMode("pomodoro"); }}
-          disabled={running} 
+          onClick={() => { if (!isTimerRunning) setMode("pomodoro"); }} // Changed to setMode
+          disabled={isTimerRunning} 
         >
           Pomodoro ({settings.pomodoroTime} min)
         </button>
         <button
           className={mode === "break" ? "active" : ""}
-          // Change: Only allow mode switch if not running
-          onClick={() => { if (!running) setMode("break"); }}
-          disabled={running} 
+          onClick={() => { if (!isTimerRunning) setMode("break"); }} // Changed to setMode
+          disabled={isTimerRunning} 
         >
           Break ({settings.breakTime} min)
         </button>
@@ -126,8 +133,8 @@ export default function TimerPage() {
       <div className="timer-display">{formatTime(seconds)}</div>
       
       <div className="timer-buttons">
-        <button onClick={() => setRunning(!running)}>
-          {running ? "Pause" : (seconds === 0 ? "Start Next" : "Start")}
+        <button onClick={() => setIsTimerRunning(!isTimerRunning)}> 
+          {isTimerRunning ? "Pause" : (seconds === 0 ? "Start Next" : "Start")}
         </button>
         <button
           onClick={mode === "pomodoro" ? startPomodoro : startBreak}
