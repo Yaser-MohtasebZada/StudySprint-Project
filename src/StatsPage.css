@@ -1,0 +1,102 @@
+/* src/StatsPage.css */
+
+.stats-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  width: 600px;
+  max-width: 90%;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px var(--color-shadow);
+}
+
+.stats-container h1 {
+    color: var(--color-accent-blue);
+    margin-bottom: 30px;
+}
+
+/* Stats Summary Cards */
+.stats-summary {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 30px;
+    gap: 20px;
+}
+
+.stat-card {
+    flex: 1;
+    padding: 20px;
+    background: var(--color-bg-body);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px var(--color-shadow);
+}
+
+.stat-card h2 {
+    font-size: 1.2em;
+    color: var(--color-accent-blue);
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 0;
+    color: var(--color-text-primary);
+}
+
+
+/* Session Log */
+.session-log {
+    width: 100%;
+    text-align: left;
+}
+
+.session-log h2 {
+    font-size: 1.5em;
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-shadow);
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+.log-list {
+    list-style: none;
+    padding: 0;
+}
+
+.log-list li {
+    padding: 10px;
+    border-bottom: 1px solid rgba(136, 136, 136, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    color: var(--color-text-primary);
+}
+
+.log-type {
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+}
+
+.log-type.pomodoro {
+    background-color: #4CAF50; /* Green for focus */
+}
+
+.log-type.break {
+    background-color: #2196F3; /* Blue for break */
+}

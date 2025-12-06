@@ -1,10 +1,12 @@
+/* src/TasksPage.css */
+
+/* Global/Background Styling (kept from previous version) */
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
   background: #cce6ff; 
 }
-
 .tasks-container {
   position: absolute;
   top: 50%;
@@ -17,26 +19,31 @@ html, body, #root {
   font-family: Arial, sans-serif;
   width: 500px;
   height: auto;
-  background: #cce6ff; 
+  min-height: 400px; /* Ensure space for tasks */
+  background: #fcfcfc; /* Lighter background for the container */
   box-sizing: border-box;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .tasks-container h1 {
-  margin-top: -20px;
+  margin-top: 0;
+  color: #4a7cff;
 }
-
 .task-input {
   display: flex;
   gap: 10px;
   margin-top: 20px;
+  width: 100%;
 }
-
 .task-input input {
   flex: 1;
   padding: 10px;
   font-size: 18px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
-
 .task-input button {
   padding: 10px 20px;
   background: #4a7cff;
@@ -44,8 +51,13 @@ html, body, #root {
   color: white;
   cursor: pointer;
   border-radius: 8px;
+  transition: background 0.2s ease;
+}
+.task-input button:hover {
+    background: #375fe0;
 }
 
+/* Updated Task List and Item Styling for Drag & Drop and Completion */
 .task-list {
   list-style: none;
   margin-top: 20px;
@@ -53,19 +65,48 @@ html, body, #root {
   width: 100%;
 }
 
-.task-list li {
+.task-item {
   display: flex;
   justify-content: space-between;
-  background: #f2f2f2;
+  align-items: center;
+  background: #f2f7ff; /* Light blue background for task */
   padding: 12px;
   margin-top: 10px;
-  border-radius: 6px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  cursor: grab; /* Cursor to indicate drag capability */
+  transition: background 0.2s;
+}
+
+.task-item.completed {
+    background: #e6ffe6; /* Light green for completed tasks */
+    opacity: 0.8;
+}
+
+.task-content {
+    flex-grow: 1;
+    text-align: left;
+    margin: 0 10px;
+    font-size: 16px;
+    color: #333;
+}
+
+.task-item.completed .task-content {
+    text-decoration: line-through;
+    color: #666;
+}
+
+.task-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
 }
 
 .delete-btn {
-  background: red;
+  background: #ff4a4a;
   color: white;
   border: none;
   padding: 4px 8px;
   cursor: pointer;
+  border-radius: 4px;
 }
