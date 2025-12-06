@@ -4,130 +4,137 @@ import { useSettings } from "./hooks/useSettings.jsx";
 import { useStats } from "./hooks/useStats.jsx";
 
 // --- Alarm Sound Placeholder ---
-// A simple way to play a sound in a React component
 const ALARM_SOUND = new Audio("https://cdn.pixabay.com/download/audio/2021/08/04/audio_3d168e64c1.mp3?filename=analog-watch-alarm-894&source=https://pixabay.com");
 
 export default function TimerPage() {
-  const { settings } = useSettings();
-  const { addSession } = useStats();
-  
-  // State for current mode (pomodoro/break), running status, and seconds left
-  const [mode, setMode] = useState("pomodoro"); 
-  const [running, setRunning] = useState(false);
-  const [seconds, setSeconds] = useState(settings.pomodoroTime * 60);
+  const { settings } = useSettings();
+  const { addSession } = useStats();
+  
+  // State for current mode (pomodoro/break), running status, and seconds left
+  const [mode, setMode] = useState("pomodoro"); 
+  const [running, setRunning] = useState(false);
+  // Initialize seconds based on settings on component load
+  const [seconds, setSeconds] = useState(settings.pomodoroTime * 60);
 
-  // --- Utility Functions ---
+  // --- Utility Functions ---
 
-  // Function to format seconds into MM:SS
-  const formatTime = (s) =>
-    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  // Function to format seconds into MM:SS
+  const formatTime = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  // Function to reset and set mode based on settings
-  const startPomodoro = useCallback(() => {
-    setRunning(false);
-    setMode("pomodoro");
-    // Use the time from settings, but convert to seconds
-    setSeconds(settings.pomodoroTime * 60);
-  }, [settings.pomodoroTime]);
+  // Function to reset and set mode based on settings
+  const startPomodoro = useCallback(() => {
+    setRunning(false);
+    setMode("pomodoro");
+    // Only reset seconds here
+    setSeconds(settings.pomodoroTime * 60);
+  }, [settings.pomodoroTime]);
 
-  const startBreak = useCallback(() => {
-    setRunning(false);
-    setMode("break");
-    // Use the time from settings, but convert to seconds
-    setSeconds(settings.breakTime * 60);
-  }, [settings.breakTime]);
+  const startBreak = useCallback(() => {
+    setRunning(false);
+    setMode("break");
+    // Only reset seconds here
+    setSeconds(settings.breakTime * 60);
+  }, [settings.breakTime]);
 
-  // --- Core Timer Logic ---
+  // --- Core Timer Logic ---
+  useEffect(() => {
+    let interval = null;
 
-  useEffect(() => {
-    let interval = null;
+    if (running && seconds > 0) {
+      // Countdown logic
+      interval = setInterval(() => {
+        setSeconds((s) => s - 1);
+      }, 1000);
 
-    if (running && seconds > 0) {
-      // Countdown logic
-      interval = setInterval(() => {
-        setSeconds((s) => s - 1);
-      }, 1000);
+    } else if (seconds === 0 && running) {
+      // Timer has finished
+      clearInterval(interval);
+      setRunning(false);
 
-    } else if (seconds === 0 && running) {
-      // Timer has finished
-      clearInterval(interval);
-      setRunning(false);
+      // Play the alarm sound
+      ALARM_SOUND.play();
 
-      // Play the alarm sound
-      ALARM_SOUND.play();
+      if (mode === "pomodoro") {
+        // 1. Log the completed session
+        addSession({
+          type: 'pomodoro', 
+          duration: settings.pomodoroTime, 
+          date: new Date().toISOString() 
+        });
+        
+        // 2. Automatically switch to break mode
+        alert(`Pomodoro completed! Time for a ${settings.breakTime} minute break.`);
+        startBreak();
 
-      if (mode === "pomodoro") {
-        // 1. Log the completed session
-        addSession({
-          type: 'pomodoro', 
-          duration: settings.pomodoroTime, 
-          date: new Date().toISOString() 
-        });
-        
-        // 2. Automatically switch to break mode
-        alert(`Pomodoro completed! Time for a ${settings.breakTime} minute break.`);
-        startBreak();
+      } else {
+        // Break has finished
+        alert(`Break finished! Time to start another ${settings.pomodoroTime} minute Pomodoro.`);
+        startPomodoro();
+      }
+    }
 
-      } else {
-        // Break has finished
-        alert(`Break finished! Time to start another ${settings.pomodoroTime} minute Pomodoro.`);
-        startPomodoro();
-      }
-    }
+    return () => clearInterval(interval);
+    
+  }, [running, seconds, mode, settings.pomodoroTime, settings.breakTime, addSession, startBreak, startPomodoro]);
 
-    return () => clearInterval(interval);
-    
-  }, [running, seconds, mode, settings.pomodoroTime, settings.breakTime, addSession, startBreak, startPomodoro]);
-
-  // --- Handle Settings Change (Reset timer if settings are changed) ---
-  // This effect runs if the settings change while the timer is not running.
+  // --- SAFE SETTINGS & MODE CHANGE EFFECT ---
+  // This hook ensures that if the mode is changed (by clicking Pomodoro/Break buttons)
+  // OR if the settings are changed (by the user on the settings page), the time is updated.
+  // CRITICALLY, it checks that the timer is NOT running.
   useEffect(() => {
     if (!running) {
-        if (mode === "pomodoro" && seconds !== settings.pomodoroTime * 60) {
-            setSeconds(settings.pomodoroTime * 60);
-        } else if (mode === "break" && seconds !== settings.breakTime * 60) {
-            setSeconds(settings.breakTime * 60);
-        }
+      const newTime = mode === "pomodoro" 
+        ? settings.pomodoroTime * 60 
+        : settings.breakTime * 60;
+        
+      // Only update if the time displayed doesn't match the new required time.
+      if (seconds !== newTime) {
+        setSeconds(newTime);
+      }
     }
-  }, [settings.pomodoroTime, settings.breakTime, mode, running, seconds]);
+    // We explicitly exclude 'seconds' from dependencies to prevent infinite loop
+    // when setting seconds inside this hook.
+  }, [mode, settings.pomodoroTime, settings.breakTime, running]); 
 
+  // --- Render Component ---
 
-  // --- Render Component ---
-
-  return (
-    <div className="timer-page-container">
-      <h1 className="timer-title">
-        {mode === "pomodoro" ? "Pomodoro Timer" : "Break Timer"}
-      </h1>
-      <div className="mode-buttons">
-        <button
-          className={mode === "pomodoro" ? "active" : ""}
-          onClick={startPomodoro}
-          disabled={running} // Disable button if timer is running
-        >
-          Pomodoro ({settings.pomodoroTime} min)
-        </button>
-        <button
-          className={mode === "break" ? "active" : ""}
-          onClick={startBreak}
-          disabled={running} // Disable button if timer is running
-        >
-          Break ({settings.breakTime} min)
-        </button>
-      </div>
-      
-      <div className="timer-display">{formatTime(seconds)}</div>
-      
-      <div className="timer-buttons">
-        <button onClick={() => setRunning(!running)}>
-          {running ? "Pause" : (seconds === 0 ? "Start Next" : "Start")}
-        </button>
-        <button
-          onClick={mode === "pomodoro" ? startPomodoro : startBreak}
-        >
-          Reset
-        </button>
-      </div>
-    </div>
-  );
+  return (
+    <div className="timer-page-container">
+      <h1 className="timer-title">
+        {mode === "pomodoro" ? "Pomodoro Timer" : "Break Timer"}
+      </h1>
+      <div className="mode-buttons">
+        <button
+          className={mode === "pomodoro" ? "active" : ""}
+          // Change: Only allow mode switch if not running
+          onClick={() => { if (!running) setMode("pomodoro"); }}
+          disabled={running} 
+        >
+          Pomodoro ({settings.pomodoroTime} min)
+        </button>
+        <button
+          className={mode === "break" ? "active" : ""}
+          // Change: Only allow mode switch if not running
+          onClick={() => { if (!running) setMode("break"); }}
+          disabled={running} 
+        >
+          Break ({settings.breakTime} min)
+        </button>
+      </div>
+      
+      <div className="timer-display">{formatTime(seconds)}</div>
+      
+      <div className="timer-buttons">
+        <button onClick={() => setRunning(!running)}>
+          {running ? "Pause" : (seconds === 0 ? "Start Next" : "Start")}
+        </button>
+        <button
+          onClick={mode === "pomodoro" ? startPomodoro : startBreak}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
 }
