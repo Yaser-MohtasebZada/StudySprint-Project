@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# StudySprint
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Pomodoro study app for focused work sessions. Run focus and break timers, keep a task list with drag-and-drop, and track how many sessions you finish each day. No account needed: everything stays in your browser.
 
-Currently, two official plugins are available:
+Built by Yaser Mohtasebzada and Aisha as a team project for CPSC 349 (Front-End Engineering) at Cal State Fullerton.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Pomodoro timer:** focus and break modes with start, pause, reset, and an alarm when time is up
+- **Task list:** add, complete, and reorder tasks with drag and drop
+- **Stats:** sessions completed today, total sessions, and a log of recent sessions
+- **Settings:** custom focus and break lengths, light, dark, or system theme, and a reset for all saved data
+- **Saves locally:** settings and session history persist in `localStorage`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## My part
 
-## Expanding the ESLint configuration
+I built the Stats and Settings pages, the `useSettings` and `useStats` hooks, dark mode with CSS variables, and the Vercel deployment. I also fixed a timer bug where pausing was unreliable: the interval read stale state, so I switched to tracking the running status with `useRef`.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- React 19 with hooks and custom hooks
+- React Router for page navigation
+- `@hello-pangea/dnd` for drag and drop
+- Vite and TypeScript config
+- CSS variables for theming
+- Deployed on Vercel
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Project structure
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── TimerPage.jsx        # Pomodoro timer
+├── TasksPage.jsx        # Drag-and-drop task list
+├── StatsPage.jsx        # Session stats and log
+├── SettingsPage.jsx     # Timer lengths, theme, clear data
+├── LoginPage.jsx        # Placeholder (the app is designed to work without logins)
+├── components/Navbar.jsx
+└── hooks/
+    ├── useSettings.jsx  # Settings and theme, saved to localStorage
+    └── useStats.jsx     # Session history and stats
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Run it locally
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/Yaser-MohtasebZada/StudySprint-Project.git
+cd StudySprint-Project
+npm install
+npm run dev
 ```
+
+## What I'd add next
+
+- Daily streaks and a weekly chart on the Stats page
+- Browser notifications when a session ends
+- Link sessions to specific tasks
